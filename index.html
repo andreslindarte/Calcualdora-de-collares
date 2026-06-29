@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Collares</title>
+<style>
+:root {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #252525;
+  --border: #333;
+  --text: #e8e8e8;
+  --text2: #999;
+  --accent: #c9a84c;
+  --accent2: #a07c2a;
+  --green: #4caf50;
+  --red: #ef5350;
+  --blue: #42a5f5;
+  --orange: #ffa726;
+  --tag-low: #2e7d32;
+  --tag-mid: #f57f17;
+  --tag-high: #c62828;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height:100vh; }
+.container { max-width: 600px; margin: 0 auto; padding: 12px; }
+h1 { font-size: 1.3rem; text-align: center; padding: 16px 0 4px; color: var(--accent); letter-spacing: 1px; }
+.subtitle { text-align: center; font-size: 0.75rem; color: var(--text2); margin-bottom: 16px; }
+
+/* Collar name */
+.name-section { margin-bottom: 12px; }
+.name-section input {
+  width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 0.95rem; outline: none;
+}
+.name-section input:focus { border-color: var(--accent); }
+.name-section input::placeholder { color: var(--text2); }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.tab-btn {
+  flex:1; padding: 8px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text2); border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.8rem;
+  transition: all .2s;
+}
+.tab-btn.active { background: var(--surface2); color: var(--accent); border-bottom-color: var(--surface2); }
+
+/* Material grid */
+.materials-panel { background: var(--surface2); border-radius: 0 0 8px 8px; padding: 8px; margin-bottom: 12px; max-height: 45vh; overflow-y: auto; }
+.mat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.mat-btn {
+  display: flex; flex-direction: column; align-items: flex-start; padding: 8px 10px;
+  border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); cursor: pointer; transition: all .15s; font-size: 0.75rem; text-align: left;
+  position: relative; overflow: hidden;
+}
+.mat-btn:active { transform: scale(0.97); }
+.mat-btn .mat-name { font-weight: 600; line-height: 1.2; margin-bottom: 2px; }
+.mat-btn .mat-price { color: var(--accent); font-size: 0.7rem; }
+.mat-btn.selected { border-color: var(--accent); background: #2a2210; }
+.mat-btn .mat-badge {
+  position: absolute; top: 4px; right: 6px; background: var(--accent); color: #000;
+  border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center;
+  justify-content: center; font-size: 0.65rem; font-weight: 700;
+}
+
+/* Quantity modal */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 100; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; width: 85%; max-width: 320px; text-align: center;
+}
+.modal h3 { font-size: 0.95rem; margin-bottom: 4px; color: var(--accent); }
+.modal .modal-price { font-size: 0.75rem; color: var(--text2); margin-bottom: 14px; }
+.qty-controls { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; }
+.qty-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text); font-size: 1.2rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.qty-btn:active { background: var(--accent); color: #000; }
+.qty-val { font-size: 1.5rem; font-weight: 700; min-width: 40px; }
+.qty-input {
+  width: 70px; text-align: center; padding: 6px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+  font-size: 1.1rem; font-weight: 700;
+}
+.qty-input:focus { border-color: var(--accent); outline: none; }
+.modal-actions { display: flex; gap: 8px; }
+.modal-actions button {
+  flex: 1; padding: 10px; border-radius: 8px; border: none; cursor: pointer;
+  font-weight: 600; font-size: 0.85rem;
+}
+.btn-cancel { background: var(--surface2); color: var(--text2); }
+.btn-confirm { background: var(--accent); color: #000; }
+.btn-remove { background: var(--red); color: #fff; }
+
+/* Selected summary */
+.selected-list { margin-bottom: 12px; }
+.selected-list h3 { font-size: 0.85rem; color: var(--text2); margin-bottom: 6px; }
+.sel-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; background: var(--surface); border-radius: 6px; margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+.sel-item .sel-name { flex: 1; }
+.sel-item .sel-qty { color: var(--accent); margin: 0 8px; }
+.sel-item .sel-sub { font-weight: 600; }
+
+/* Costs section */
+.costs-section { background: var(--surface); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.cost-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.82rem; }
+.cost-row.total { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; font-weight: 700; font-size: 0.95rem; }
+
+/* Margin section */
+.margin-section { background: var(--surface); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.margin-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.margin-row label { font-size: 0.82rem; color: var(--text2); white-space: nowrap; }
+.margin-input {
+  width: 70px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text); font-size: 0.9rem; text-align: center;
+}
+.margin-input:focus { border-color: var(--accent); outline: none; }
+.margin-tag {
+  padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; color: #fff;
+}
+.margin-tag.low { background: var(--tag-low); }
+.margin-tag.mid { background: var(--tag-mid); }
+.margin-tag.high { background: var(--tag-high); }
+.margin-price { margin-left: auto; font-weight: 700; font-size: 0.95rem; }
+
+/* Action buttons */
+.actions { display: flex; gap: 8px; margin-bottom: 16px; }
+.actions button {
+  flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
+  font-weight: 700; font-size: 0.9rem; transition: all .15s;
+}
+.btn-calc { background: var(--accent); color: #000; }
+.btn-calc:disabled { opacity: 0.4; cursor: default; }
+.btn-clear { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+/* Results */
+.results { margin-bottom: 20px; }
+.result-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px; margin-bottom: 8px;
+}
+.result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.result-name { font-weight: 700; font-size: 1rem; color: var(--accent); }
+.result-date { font-size: 0.7rem; color: var(--text2); }
+.result-mats { font-size: 0.75rem; color: var(--text2); margin-bottom: 8px; line-height: 1.4; }
+.result-prices { display: flex; gap: 6px; flex-wrap: wrap; }
+.result-price-tag {
+  padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+}
+.result-price-tag.cost { background: var(--surface2); color: var(--text2); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Search */
+.search-box {
+  width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 0.82rem; margin-bottom: 8px; outline: none;
+}
+.search-box:focus { border-color: var(--accent); }
+.search-box::placeholder { color: var(--text2); }
+
+.empty-state { text-align: center; padding: 20px; color: var(--text2); font-size: 0.82rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>✦ Calculadora de Collares ✦</h1>
+  <p class="subtitle">Precio mayorista para revendedores</p>
+
+  <div class="name-section">
+    <input type="text" id="collarName" placeholder="Nombre del collar...">
+  </div>
+
+  <div class="tabs" id="categoryTabs"></div>
+  <div class="materials-panel">
+    <input type="text" class="search-box" id="searchBox" placeholder="Buscar material...">
+    <div class="mat-grid" id="matGrid"></div>
+  </div>
+
+  <div class="selected-list" id="selectedList" style="display:none">
+    <h3>Materiales seleccionados</h3>
+    <div id="selectedItems"></div>
+    <div class="cost-row total" style="padding: 8px 10px;">
+      <span>Costo materiales</span>
+      <span id="matTotal">$0</span>
+    </div>
+  </div>
+
+  <div class="costs-section">
+    <div class="cost-row">
+      <span>Transporte (taxi/20)</span>
+      <span>$800</span>
+    </div>
+    <div class="cost-row">
+      <span>Mano de obra (30 min)</span>
+      <span>$5,000</span>
+    </div>
+    <div class="cost-row total">
+      <span>COSTO TOTAL</span>
+      <span id="totalCost">$5,800</span>
+    </div>
+  </div>
+
+  <div class="margin-section">
+    <div class="margin-row">
+      <label>Ganancia %</label>
+      <input type="number" class="margin-input" id="marginInput" value="25" min="0" max="200">
+      <span class="margin-tag" id="marginTag">MEDIA</span>
+      <span class="margin-price" id="salePrice">$0</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-calc" id="btnCalc">Guardar collar</button>
+    <button class="btn-clear" id="btnClear">Limpiar todo</button>
+  </div>
+
+  <div class="results" id="results">
+    <div class="empty-state" id="emptyState">Los collares calculados aparecerán aquí</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Material</h3>
+    <p class="modal-price" id="modalPrice">$0 c/u</p>
+    <div class="qty-controls">
+      <button class="qty-btn" id="qtyMinus">−</button>
+      <input type="number" class="qty-input" id="qtyVal" value="1" min="0" step="0.1">
+      <button class="qty-btn" id="qtyPlus">+</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+      <button class="btn-remove" id="modalRemove" style="display:none">Quitar</button>
+      <button class="btn-confirm" id="modalConfirm">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TRANSPORT = 800;
+const LABOR = 5000;
+const FIXED = TRANSPORT + LABOR;
+
+const inventory = [
+  {name:"Tapa nudo de acero",cost:220,cat:"Herrajes"},
+  {name:"Caracoles porcelana",cost:983.33,cat:"Dijes"},
+  {name:"Dije cuerno reno rojo",cost:1520,cat:"Dijes"},
+  {name:"Dije de vidrio ojo turco",cost:7840,cat:"Dijes"},
+  {name:"Argolla de acero 6mm",cost:106.67,cat:"Herrajes"},
+  {name:"Escarlanchin acero",cost:86.67,cat:"Herrajes"},
+  {name:"Dije golfield corazon gramo",cost:128,cat:"Dijes"},
+  {name:"Cerradura pico de loro 11mm",cost:633.33,cat:"Herrajes"},
+  {name:"Ojo turco blanco",cost:198.33,cat:"Piedras"},
+  {name:"Piedras agatha rojas",cost:278,cat:"Piedras"},
+  {name:"Piedra naranja 4mm",cost:108,cat:"Piedras"},
+  {name:"Mostacilla checa dorada gramo",cost:588,cat:"Mostacilla"},
+  {name:"Topos dorados en acero",cost:386.67,cat:"Herrajes"},
+  {name:"Pinza acero",cost:9520,cat:"Herrajes"},
+  {name:"Dije corazon textura",cost:3920,cat:"Dijes"},
+  {name:"Dije cangrejo",cost:4400,cat:"Dijes"},
+  {name:"Piedra natural transparente",cost:611.76,cat:"Piedras"},
+  {name:"Dije estrella de mar",cost:3760,cat:"Dijes"},
+  {name:"Dije Mapa de colombia",cost:1200,cat:"Dijes"},
+  {name:"Dije pato golfield",cost:213.33,cat:"Dijes"},
+  {name:"Balin dorado 8mm golf",cost:384,cat:"Herrajes"},
+  {name:"Cadena metro rodio aros",cost:9360,cat:"Cadenas"},
+  {name:"Dije corazon acrilico",cost:1560,cat:"Dijes"},
+  {name:"Balin 4mm golfield gr",cost:1280,cat:"Herrajes"},
+  {name:"Pasador de pato",cost:880,cat:"Herrajes"},
+  {name:"Dije pimiento rojo",cost:4720,cat:"Dijes"},
+  {name:"Balin 2mm golfield gr",cost:1280,cat:"Herrajes"},
+  {name:"Argolla acero 4mm",cost:60,cat:"Herrajes"},
+  {name:"Doradas acero tornillo",cost:560,cat:"Herrajes"},
+  {name:"Mostacilla checa roja 20gr",cost:4000,cat:"Mostacilla"},
+  {name:"Mostacilla checa rosa 20gr",cost:4000,cat:"Mostacilla"},
+  {name:"Dije Corazon puntos",cost:2800,cat:"Dijes"},
+  {name:"Dije corazon fe",cost:3840,cat:"Dijes"},
+  {name:"Dije corazon plac",cost:3760,cat:"Dijes"},
+  {name:"Dije corazon dorado",cost:2000,cat:"Dijes"},
+  {name:"Piedras azules",cost:185.33,cat:"Piedras"},
+  {name:"Corazones verdes fosil",cost:138.4,cat:"Piedras"},
+  {name:"Piedras chicle grandes piel",cost:160,cat:"Piedras"},
+  {name:"Piedras grandes chicle rosa",cost:162.96,cat:"Piedras"},
+  {name:"Piedras medianas chicle rojas",cost:65.19,cat:"Piedras"},
+  {name:"Piedras grandes chicle azul",cost:168.8,cat:"Piedras"},
+  {name:"Separador dorado gramo golf",cost:1440,cat:"Herrajes"},
+  {name:"Piedras amarillas",cost:400,cat:"Piedras"},
+  {name:"Piedras rosadas",cost:293.33,cat:"Piedras"}
+];
+
+const categories = ["Todos", ...new Set(inventory.map(m => m.cat))];
+let activeCategory = "Todos";
+let selected = {};
+let currentMat = null;
+let collars = [];
+
+const $ = id => document.getElementById(id);
+const fmt = n => "$" + Math.round(n).toLocaleString("es-CO");
+
+function getMarginLabel(pct) {
+  if (pct <= 15) return {label:"BAJA", cls:"low"};
+  if (pct <= 35) return {label:"MEDIA", cls:"mid"};
+  return {label:"ALTA", cls:"high"};
+}
+
+function renderTabs() {
+  $("categoryTabs").innerHTML = categories.map(c =>
+    `<button class="tab-btn ${c===activeCategory?'active':''}" data-cat="${c}">${c}</button>`
+  ).join("");
+}
+
+function renderGrid() {
+  const search = $("searchBox").value.toLowerCase();
+  const filtered = inventory.filter(m =>
+    (activeCategory === "Todos" || m.cat === activeCategory) &&
+    (!search || m.name.toLowerCase().includes(search))
+  );
+  $("matGrid").innerHTML = filtered.map(m => {
+    const sel = selected[m.name];
+    return `<button class="mat-btn ${sel?'selected':''}" data-name="${m.name}">
+      <span class="mat-name">${m.name}</span>
+      <span class="mat-price">${fmt(m.cost)} c/u</span>
+      ${sel ? `<span class="mat-badge">${sel.qty}</span>` : ""}
+    </button>`;
+  }).join("");
+}
+
+function renderSelected() {
+  const entries = Object.values(selected);
+  if (!entries.length) {
+    $("selectedList").style.display = "none";
+    return;
+  }
+  $("selectedList").style.display = "block";
+  $("selectedItems").innerHTML = entries.map(s =>
+    `<div class="sel-item">
+      <span class="sel-name">${s.name}</span>
+      <span class="sel-qty">×${s.qty}</span>
+      <span class="sel-sub">${fmt(s.subtotal)}</span>
+    </div>`
+  ).join("");
+}
+
+function recalc() {
+  const matCost = Object.values(selected).reduce((a,s) => a + s.subtotal, 0);
+  const total = matCost + FIXED;
+  const margin = parseFloat($("marginInput").value) || 0;
+  const sale = total * (1 + margin / 100);
+  const info = getMarginLabel(margin);
+
+  $("matTotal").textContent = fmt(matCost);
+  $("totalCost").textContent = fmt(total);
+  $("salePrice").textContent = fmt(sale);
+  $("marginTag").textContent = info.label;
+  $("marginTag").className = "margin-tag " + info.cls;
+  $("btnCalc").disabled = !Object.keys(selected).length;
+}
+
+function openModal(name) {
+  const mat = inventory.find(m => m.name === name);
+  currentMat = mat;
+  $("modalTitle").textContent = mat.name;
+  $("modalPrice").textContent = fmt(mat.cost) + " c/u";
+  const existing = selected[mat.name];
+  $("qtyVal").value = existing ? existing.qty : 1;
+  $("modalRemove").style.display = existing ? "block" : "none";
+  $("modalConfirm").textContent = existing ? "Actualizar" : "Agregar";
+  $("modalOverlay").classList.add("show");
+  $("qtyVal").select();
+}
+
+function closeModal() {
+  $("modalOverlay").classList.remove("show");
+  currentMat = null;
+}
+
+function confirmModal() {
+  const qty = parseFloat($("qtyVal").value);
+  if (!qty || qty <= 0) {
+    delete selected[currentMat.name];
+  } else {
+    selected[currentMat.name] = {
+      name: currentMat.name,
+      cost: currentMat.cost,
+      qty: qty,
+      subtotal: currentMat.cost * qty
+    };
+  }
+  closeModal();
+  renderGrid();
+  renderSelected();
+  recalc();
+}
+
+function saveCollar() {
+  const name = $("collarName").value.trim() || "Sin nombre";
+  const margin = parseFloat($("marginInput").value) || 0;
+  const matCost = Object.values(selected).reduce((a,s) => a + s.subtotal, 0);
+  const total = matCost + FIXED;
+  const sale = total * (1 + margin / 100);
+  const info = getMarginLabel(margin);
+
+  collars.unshift({
+    name,
+    materials: {...selected},
+    matCost, total, margin, sale,
+    marginInfo: info,
+    date: new Date().toLocaleString("es-CO", {hour12:false, day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"})
+  });
+  renderResults();
+  resetForm();
+}
+
+function resetForm() {
+  selected = {};
+  $("collarName").value = "";
+  renderGrid();
+  renderSelected();
+  recalc();
+}
+
+function clearAll() {
+  collars = [];
+  renderResults();
+  resetForm();
+}
+
+function renderResults() {
+  if (!collars.length) {
+    $("results").innerHTML = '<div class="empty-state">Los collares calculados aparecerán aquí</div>';
+    return;
+  }
+  $("results").innerHTML = collars.map(c => {
+    const mats = Object.values(c.materials).map(m => `${m.name} ×${m.qty}`).join(" · ");
+    return `<div class="result-card">
+      <div class="result-header">
+        <span class="result-name">${c.name}</span>
+        <span class="result-date">${c.date}</span>
+      </div>
+      <div class="result-mats">${mats}</div>
+      <div class="result-prices">
+        <span class="result-price-tag cost">Costo: ${fmt(c.total)}</span>
+        <span class="result-price-tag" style="background:${c.marginInfo.cls==='low'?'var(--tag-low)':c.marginInfo.cls==='mid'?'var(--tag-mid)':'var(--tag-high)'};color:#fff">
+          ${c.marginInfo.label} ${c.margin}% → ${fmt(c.sale)}
+        </span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// Events
+$("categoryTabs").addEventListener("click", e => {
+  if (!e.target.dataset.cat) return;
+  activeCategory = e.target.dataset.cat;
+  renderTabs();
+  renderGrid();
+});
+
+$("matGrid").addEventListener("click", e => {
+  const btn = e.target.closest(".mat-btn");
+  if (!btn) return;
+  openModal(btn.dataset.name);
+});
+
+$("searchBox").addEventListener("input", renderGrid);
+$("qtyMinus").addEventListener("click", () => {
+  const v = parseFloat($("qtyVal").value) || 1;
+  $("qtyVal").value = Math.max(0.1, +(v - 1).toFixed(1));
+});
+$("qtyPlus").addEventListener("click", () => {
+  const v = parseFloat($("qtyVal").value) || 0;
+  $("qtyVal").value = +(v + 1).toFixed(1);
+});
+$("modalCancel").addEventListener("click", closeModal);
+$("modalConfirm").addEventListener("click", confirmModal);
+$("modalRemove").addEventListener("click", () => {
+  delete selected[currentMat.name];
+  closeModal();
+  renderGrid();
+  renderSelected();
+  recalc();
+});
+$("modalOverlay").addEventListener("click", e => {
+  if (e.target === $("modalOverlay")) closeModal();
+});
+$("marginInput").addEventListener("input", recalc);
+$("btnCalc").addEventListener("click", saveCollar);
+$("btnClear").addEventListener("click", clearAll);
+$("qtyVal").addEventListener("keydown", e => {
+  if (e.key === "Enter") confirmModal();
+});
+
+// Init
+renderTabs();
+renderGrid();
+recalc();
+</script>
+</body>
+</html>
