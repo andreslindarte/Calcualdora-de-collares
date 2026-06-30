@@ -321,6 +321,13 @@ h1 { font-size: 1.3rem; text-align: center; padding: 16px 0 4px; color: var(--ac
 </div>
 
 <script>
+// ── Configuración GitHub ──────────────────────────────
+const GH_TOKEN = "PEGA_TU_TOKEN_AQUI";
+const GH_OWNER = "andreslindarte";
+const GH_REPO  = "Calcualdora-de-collares"; // verifica el nombre exacto
+const GH_FILE  = "collares.json";
+// ─────────────────────────────────────────────────────
+
 const TRANSPORT = 800;
 const LABOR = 5000;
 const FIXED = TRANSPORT + LABOR;
@@ -376,7 +383,8 @@ const categories = ["Todos", ...new Set(inventory.map(m => m.cat))];
 let activeCategory = "Todos";
 let selected = {};
 let currentMat = null;
-let collars = JSON.parse(localStorage.getItem("collares") || "[]");
+let collars = [];
+let ghFileSha = null;
 
 const $ = id => document.getElementById(id);
 const fmt = n => "$" + Math.round(n).toLocaleString("es-CO");
@@ -524,8 +532,36 @@ function resetForm() {
   recalc();
 }
 
-function saveCollars() {
-  localStorage.setItem("collares", JSON.stringify(collars));
+async function loadCollars() {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`, {
+      headers: { Authorization: `Bearer ${GH_TOKEN}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      ghFileSha = data.sha;
+      collars = JSON.parse(atob(data.content));
+    }
+  } catch(e) {}
+  renderResults();
+  updateBadge();
+}
+
+async function saveCollars() {
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(collars, null, 2))));
+  const body = { message: "Actualizar collares", content };
+  if (ghFileSha) body.sha = ghFileSha;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${GH_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      ghFileSha = data.content.sha;
+    }
+  } catch(e) {}
 }
 
 function deleteCollar(index) {
@@ -623,8 +659,7 @@ $("qtyVal").addEventListener("keydown", e => {
 renderTabs();
 renderGrid();
 recalc();
-renderResults();
-updateBadge();
+loadCollars();
 </script>
 </body>
 </html>
