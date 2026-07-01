@@ -214,6 +214,27 @@ h1 { font-size: 1.3rem; text-align: center; padding: 16px 0 4px; color: var(--ac
 .search-box::placeholder { color: var(--text2); }
 
 .empty-state { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 0.82rem; }
+
+/* Extras */
+.extras-section { background: var(--surface); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.extras-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; color: var(--text2); }
+.btn-add-extra {
+  padding: 4px 10px; border-radius: 6px; border: 1px dashed var(--accent);
+  background: none; color: var(--accent); font-size: 0.78rem; cursor: pointer;
+}
+.extra-item { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+.extra-item input[type="text"] {
+  flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text); font-size: 0.8rem; outline: none;
+}
+.extra-item input[type="text"]:focus { border-color: var(--accent); }
+.extra-item input[type="number"] {
+  width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text); font-size: 0.8rem; outline: none; text-align: right;
+}
+.extra-item input[type="number"]:focus { border-color: var(--accent); }
+.extra-delete { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 1rem; padding: 0 4px; }
+.extra-delete:hover { color: var(--red); }
 </style>
 </head>
 <body>
@@ -281,7 +302,15 @@ h1 { font-size: 1.3rem; text-align: center; padding: 16px 0 4px; color: var(--ac
       </div>
     </div>
 
-    <div class="actions">
+    <div class="extras-section" id="extrasSection">
+    <div class="extras-header">
+      <span>Extras</span>
+      <button class="btn-add-extra" id="btnAddExtra">+ Agregar extra</button>
+    </div>
+    <div id="extrasList"></div>
+  </div>
+
+  <div class="actions">
       <button class="btn-calc" id="btnCalc">Guardar collar</button>
     </div>
   </div>
@@ -322,7 +351,7 @@ h1 { font-size: 1.3rem; text-align: center; padding: 16px 0 4px; color: var(--ac
 
 <script>
 // ── Configuración GitHub ──────────────────────────────
-const GH_TOKEN = "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";
+const GH_TOKEN = "PEGA_TU_TOKEN_AQUI";
 const GH_OWNER = "andreslindarte";
 const GH_REPO  = "Calcualdora-de-collares"; // verifica el nombre exacto
 const GH_FILE  = "collares.json";
@@ -334,49 +363,51 @@ const FIXED = TRANSPORT + LABOR;
 
 const inventory = [
   {name:"Tapa nudo de acero",cost:220,cat:"Herrajes"},
-  {name:"Caracoles porcelana",cost:983.33,cat:"Dijes"},
-  {name:"Dije cuerno reno rojo",cost:1520,cat:"Dijes"},
-  {name:"Dije de vidrio ojo turco",cost:7840,cat:"Dijes"},
   {name:"Argolla de acero 6mm",cost:106.67,cat:"Herrajes"},
   {name:"Escarlanchin acero",cost:86.67,cat:"Herrajes"},
-  {name:"Dije golfield corazon gramo",cost:128,cat:"Dijes"},
   {name:"Cerradura pico de loro 11mm",cost:633.33,cat:"Herrajes"},
-  {name:"Ojo turco blanco",cost:198.33,cat:"Piedras"},
-  {name:"Piedras agatha rojas",cost:278,cat:"Piedras"},
-  {name:"Piedra naranja 4mm",cost:108,cat:"Piedras"},
-  {name:"Mostacilla checa dorada gramo",cost:588,cat:"Mostacilla"},
   {name:"Topos dorados en acero",cost:386.67,cat:"Herrajes"},
-  {name:"Pinza acero",cost:9520,cat:"Herrajes"},
+  {name:"Balin dorado 8mm golf",cost:384,cat:"Herrajes"},
+  {name:"Balin 4mm golfield gr",cost:1280,cat:"Herrajes"},
+  {name:"Balin 2mm golfield gr",cost:1280,cat:"Herrajes"},
+  {name:"Pasador de pato",cost:880,cat:"Herrajes"},
+  {name:"Argolla acero 4mm",cost:60,cat:"Herrajes"},
+  {name:"Doradas acero tornillo",cost:560,cat:"Herrajes"},
+  {name:"Separador dorado golf gramo",cost:1440,cat:"Herrajes"},
+  {name:"Dije cuerno reno rojo",cost:1520,cat:"Dijes"},
+  {name:"Dije de vidrio ojo turco",cost:7840,cat:"Dijes"},
+  {name:"Dije golfield corazon gramo",cost:128,cat:"Dijes"},
   {name:"Dije corazon textura",cost:3920,cat:"Dijes"},
   {name:"Dije cangrejo",cost:4400,cat:"Dijes"},
-  {name:"Piedra natural transparente",cost:611.76,cat:"Piedras"},
   {name:"Dije estrella de mar",cost:3760,cat:"Dijes"},
   {name:"Dije Mapa de colombia",cost:1200,cat:"Dijes"},
   {name:"Dije pato golfield",cost:213.33,cat:"Dijes"},
-  {name:"Balin dorado 8mm golf",cost:384,cat:"Herrajes"},
-  {name:"Cadena metro rodio aros",cost:9360,cat:"Cadenas"},
   {name:"Dije corazon acrilico",cost:1560,cat:"Dijes"},
-  {name:"Balin 4mm golfield gr",cost:1280,cat:"Herrajes"},
-  {name:"Pasador de pato",cost:880,cat:"Herrajes"},
   {name:"Dije pimiento rojo",cost:4720,cat:"Dijes"},
-  {name:"Balin 2mm golfield gr",cost:1280,cat:"Herrajes"},
-  {name:"Argolla acero 4mm",cost:60,cat:"Herrajes"},
-  {name:"Doradas acero tornillo",cost:560,cat:"Herrajes"},
-  {name:"Mostacilla checa roja 20gr",cost:4000,cat:"Mostacilla"},
-  {name:"Mostacilla checa rosa 20gr",cost:4000,cat:"Mostacilla"},
   {name:"Dije Corazon puntos",cost:2800,cat:"Dijes"},
   {name:"Dije corazon fe",cost:3840,cat:"Dijes"},
   {name:"Dije corazon plac",cost:3760,cat:"Dijes"},
   {name:"Dije corazon dorado",cost:2000,cat:"Dijes"},
+  {name:"Caracoles porcelana",cost:983.33,cat:"Dijes"},
+  {name:"Ojo turco blanco",cost:198.33,cat:"Piedras"},
+  {name:"Piedras agatha rojas",cost:278,cat:"Piedras"},
+  {name:"Piedra naranja 4mm",cost:108,cat:"Piedras"},
+  {name:"Piedra natural transparente",cost:611.76,cat:"Piedras"},
   {name:"Piedras azules",cost:185.33,cat:"Piedras"},
   {name:"Corazones verdes fosil",cost:138.4,cat:"Piedras"},
-  {name:"Piedras chicle grandes piel",cost:160,cat:"Piedras"},
+  {name:"Piedras grandes chicle piel",cost:160,cat:"Piedras"},
   {name:"Piedras grandes chicle rosa",cost:162.96,cat:"Piedras"},
   {name:"Piedras medianas chicle rojas",cost:65.19,cat:"Piedras"},
   {name:"Piedras grandes chicle azul",cost:168.8,cat:"Piedras"},
-  {name:"Separador dorado gramo golf",cost:1440,cat:"Herrajes"},
-  {name:"Piedras amarillas",cost:400,cat:"Piedras"},
-  {name:"Piedras rosadas",cost:293.33,cat:"Piedras"}
+  {name:"Piedras amarillas naturales",cost:400,cat:"Piedras"},
+  {name:"Piedras rosadas naturales",cost:293.33,cat:"Piedras"},
+  {name:"Piedras varias",cost:100,cat:"Piedras"},
+  {name:"Piedras murano",cost:80,cat:"Piedras"},
+  {name:"Mostacilla checa dorada gramo",cost:588,cat:"Mostacilla"},
+  {name:"Mostacilla checa roja gr",cost:200,cat:"Mostacilla"},
+  {name:"Mostacilla checa rosa gr",cost:200,cat:"Mostacilla"},
+  {name:"Cadena metro rodio aros",cost:9360,cat:"Cadenas"},
+  {name:"Hilo naylon metro",cost:27.5,cat:"Cadenas"},
 ];
 
 const categories = ["Todos", ...new Set(inventory.map(m => m.cat))];
@@ -385,6 +416,7 @@ let selected = {};
 let currentMat = null;
 let collars = [];
 let ghFileSha = null;
+let extras = [];
 
 const $ = id => document.getElementById(id);
 const fmt = n => "$" + Math.round(n).toLocaleString("es-CO");
@@ -451,9 +483,32 @@ function renderSelected() {
   ).join("");
 }
 
+function addExtra() {
+  extras.push({name:"", cost:0});
+  renderExtras();
+}
+
+function removeExtra(i) {
+  extras.splice(i, 1);
+  renderExtras();
+  recalc();
+}
+
+function renderExtras() {
+  $("extrasList").innerHTML = extras.map((e, i) => `
+    <div class="extra-item">
+      <input type="text" placeholder="Descripción (ej: packaging)" value="${e.name}"
+        oninput="extras[${i}].name=this.value">
+      <input type="number" placeholder="$ valor" value="${e.cost||''}" min="0"
+        oninput="extras[${i}].cost=parseFloat(this.value)||0; recalc()">
+      <button class="extra-delete" onclick="removeExtra(${i})">✕</button>
+    </div>`).join("");
+}
+
 function recalc() {
   const matCost = Object.values(selected).reduce((a,s) => a + s.subtotal, 0);
-  const total = matCost + FIXED;
+  const extraCost = extras.reduce((a,e) => a + (e.cost||0), 0);
+  const total = matCost + extraCost + FIXED;
   const margin = parseFloat($("marginInput").value) || 0;
   const sale = total * (1 + margin / 100);
   const info = getMarginLabel(margin);
@@ -506,14 +561,16 @@ function saveCollar() {
   const name = $("collarName").value.trim() || "Sin nombre";
   const margin = parseFloat($("marginInput").value) || 0;
   const matCost = Object.values(selected).reduce((a,s) => a + s.subtotal, 0);
-  const total = matCost + FIXED;
+  const extraCost = extras.reduce((a,e) => a + (e.cost||0), 0);
+  const total = matCost + extraCost + FIXED;
   const sale = total * (1 + margin / 100);
   const info = getMarginLabel(margin);
 
   collars.unshift({
     name,
     materials: {...selected},
-    matCost, total, margin, sale,
+    extras: extras.filter(e => e.name || e.cost),
+    matCost, extraCost, total, margin, sale,
     marginInfo: info,
     date: new Date().toLocaleString("es-CO", {hour12:false, day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"})
   });
@@ -526,9 +583,11 @@ function saveCollar() {
 
 function resetForm() {
   selected = {};
+  extras = [];
   $("collarName").value = "";
   renderGrid();
   renderSelected();
+  renderExtras();
   recalc();
 }
 
@@ -593,7 +652,7 @@ function renderResults() {
           <button class="result-delete" onclick="deleteCollar(${i})">✕</button>
         </div>
       </div>
-      <div class="result-mats">${mats}</div>
+      <div class="result-mats">${mats}${c.extras&&c.extras.length ? ' · <span style="color:var(--accent)">Extras: </span>' + c.extras.map(e=>`${e.name} ${fmt(e.cost)}`).join(', ') : ''}</div>
       <div class="result-prices">
         <span class="result-price-tag cost">Costo: ${fmt(c.total)}</span>
         <span class="result-price-tag" style="background:${c.marginInfo.cls==='low'?'var(--tag-low)':c.marginInfo.cls==='mid'?'var(--tag-mid)':'var(--tag-high)'};color:#fff">
@@ -649,6 +708,7 @@ $("modalOverlay").addEventListener("click", e => {
   if (e.target === $("modalOverlay")) closeModal();
 });
 $("marginInput").addEventListener("input", recalc);
+$("btnAddExtra").addEventListener("click", addExtra);
 $("btnCalc").addEventListener("click", saveCollar);
 $("btnClearAll").addEventListener("click", clearAll);
 $("qtyVal").addEventListener("keydown", e => {
